@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Five local printer web pages in one dashboard.">
+<title>Printer wall</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23162336'/%3E%3Cpath d='M7 8h8v7H7zm10 0h8v7h-8zM7 17h8v7H7zm10 0h8v7h-8z' fill='%235eead4'/%3E%3C/svg%3E">
+<style>
+:root{font-family:Segoe UI,system-ui,sans-serif;color:#e7eef8;background:#101824;color-scheme:dark;font-size:16px}*{box-sizing:border-box}body{margin:0}header{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:22px 26px;border-bottom:1px solid #304057}h1{font-size:1.55rem;margin:0;letter-spacing:-.04em}h1 span{color:#5eead4}header p{margin:6px 0 0;color:#aab9cb;font-size:.875rem}.toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap}label{font-size:.875rem;color:#bfccdd;display:flex;align-items:center;gap:8px}button,select,.open{font:inherit;font-size:.875rem;border:1px solid #46566c;background:#223146;color:#f0f5fb;border-radius:6px;padding:9px 12px;cursor:pointer;text-decoration:none}button:hover,.open:hover{background:#34485f}button:focus-visible,a:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #5eead4;outline-offset:3px}#refresh{background:#5eead4;color:#102b2b;border-color:#5eead4;font-weight:650}.notice{margin:16px 26px;color:#bac8da;font-size:.875rem;line-height:1.5}.notice summary{cursor:pointer;color:#e6eef8}.notice p{max-width:1000px;margin-bottom:0}.notice a{color:#80e9db}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding:0 26px 24px}.card{min-width:0;border:1px solid #36475e;border-radius:10px;overflow:hidden;background:#1a2637}.card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;flex-wrap:wrap}.identity{display:flex;align-items:center;gap:10px}.number{font-size:.8rem;color:#72e1d4;border:1px solid #406466;border-radius:5px;padding:5px}.card h2{font-size:1rem;margin:0;font-weight:600}.actions{display:flex;gap:6px}.actions button,.actions a{padding:6px 9px}.viewport{height:calc((100dvh - 265px)/2);min-height:280px;background:white;overflow:auto;position:relative}.canvas{position:relative}iframe{position:absolute;top:0;left:0;border:0;transform-origin:top left;background:#fff}.card-foot{padding:8px 14px;display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:.8rem;color:#b1c1d6}.card-foot select{padding:3px;font-size:.8rem}.card-foot label{font-size:.8rem}.card:fullscreen{display:flex;flex-direction:column;background:#101824}.card:fullscreen .viewport{flex:1;height:auto}.footer{color:#aab9cb;font-size:.875rem;padding:0 26px 20px;margin:0}.grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}@media(max-width:1200px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}header{align-items:flex-start;flex-direction:column}}@media(max-width:700px){header{padding:18px}.grid,.grid.two{grid-template-columns:1fr;padding:0 12px 16px}.notice{margin:14px 18px}.viewport{height:390px}.toolbar{gap:8px}.footer{padding:0 18px 18px}}@media(prefers-reduced-motion:no-preference){button,a{transition:background .15s}}
+</style>
+</head>
+<body>
+<header><div><h1>Printer<span> wall</span></h1><p>Five devices. One workspace.</p></div><div class="toolbar"><label>Layout <select id="layout"><option value="three">3 columns</option><option value="two">2 columns</option></select></label><label>Auto-refresh <select id="interval"><option value="0">Off</option><option value="60">Every minute</option><option value="300">Every 5 minutes</option><option value="600">Every 10 minutes</option></select></label><button id="refresh" type="button">Refresh all</button></div></header>
+<details class="notice"><summary>Connect to the printer network · Blank panel? Read connection help</summary><p>These pages load directly from your network. Connect to the office network or VPN, and allow local-network access if your browser asks. GitHub Pages uses HTTPS, so browsers without a local-network exception may block these HTTP pages. Try current Chrome. If a printer refuses embedding, use its Open link; this dashboard cannot override the printer’s security settings. An internal web server or an IT-managed proxy may be needed. <a href="https://developer.chrome.com/blog/local-network-access" target="_blank" rel="noopener noreferrer">Browser connection details</a>.</p><p>Fit scales the page to show its device overview. Choose a larger zoom and scroll inside a panel for readable details. Refresh returns a panel to the Device page. Auto-refresh is off initially so it will not interrupt your work.</p></details>
+<main class="grid" id="grid" aria-label="Printer web pages"></main>
+<p class="footer" id="activity" role="status">Embedded pages show the printers’ own information. Connection and device status cannot be verified by this dashboard.</p>
+<noscript>This dashboard needs JavaScript enabled to display the five printer pages.</noscript>
+<script>
+'use strict';
+const addresses=['10.6.3.10','10.6.3.11','10.6.3.12','10.6.3.13','10.6.3.40'];
+const grid=document.getElementById('grid');
+const panels=[];
+function resize(panel){
+ const w=panel.viewport.clientWidth,h=panel.viewport.clientHeight;
+ const scale=panel.zoom.value==='fit'?Math.min(w/1020,h/650,1):Number(panel.zoom.value);
+ const frameWidth=Math.max(1020,w/scale),frameHeight=Math.max(650,h/scale);
+ panel.frame.style.width=frameWidth+'px';panel.frame.style.height=frameHeight+'px';
+ panel.frame.style.transform=`scale(${scale})`;
+ panel.canvas.style.width=(frameWidth*scale)+'px';panel.canvas.style.height=(frameHeight*scale)+'px';
+}
+function refresh(panel){panel.frame.src=panel.url;panel.stamp.textContent='Requested '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
+addresses.forEach((address,index)=>{
+ const url='http://'+address+'/#/device';
+ const card=document.createElement('section');card.className='card';
+ card.innerHTML=`<div class="card-head"><div class="identity"><span class="number">0${index+1}</span><h2>${address}</h2></div><div class="actions"><button type="button" class="reload" aria-label="Refresh ${address}">↻</button><button type="button" class="expand" aria-label="Expand ${address}">Expand</button><a class="open" href="${url}" target="_blank" rel="noopener noreferrer" aria-label="Open ${address} in a new tab">Open ↗</a></div></div><div class="viewport"><div class="canvas"><iframe title="Printer ${address}" referrerpolicy="no-referrer" allow="local-network-access"></iframe></div></div><div class="card-foot"><span class="stamp"></span><label>Zoom <select aria-label="Zoom for ${address}"><option value="fit">Fit</option><option value="0.5">50%</option><option value="0.65">65%</option><option value="0.8">80%</option><option value="1">100%</option></select></label></div>`;
+ grid.append(card);
+ const panel={url,card,frame:card.querySelector('iframe'),viewport:card.querySelector('.viewport'),canvas:card.querySelector('.canvas'),zoom:card.querySelector('select'),stamp:card.querySelector('.stamp')};
+ panels.push(panel);
+ card.querySelector('.reload').addEventListener('click',()=>refresh(panel));
+ panel.zoom.addEventListener('change',()=>resize(panel));
+ const expand=card.querySelector('.expand');
+ if(!document.fullscreenEnabled)expand.hidden=true;
+ expand.addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await card.requestFullscreen();}catch{document.getElementById('activity').textContent='Full screen is unavailable. Use Open to view this printer in its own tab.';}});
+ document.addEventListener('fullscreenchange',()=>{expand.textContent=document.fullscreenElement===card?'Close':'Expand';resize(panel);});
+ new ResizeObserver(()=>resize(panel)).observe(panel.viewport);
+ refresh(panel);
+});
+function refreshAll(){panels.forEach(refresh);document.getElementById('activity').textContent='Refresh requested for all five printers at '+new Date().toLocaleTimeString()+'. Device status is not verified.';}
+document.getElementById('refresh').addEventListener('click',refreshAll);
+document.getElementById('layout').addEventListener('change',event=>grid.classList.toggle('two',event.target.value==='two'));
+let timer;
+document.getElementById('interval').addEventListener('change',event=>{clearInterval(timer);const seconds=Number(event.target.value);if(seconds)timer=setInterval(()=>{if(!document.hidden)refreshAll();},seconds*1000);});
+</script>
+</body>
+</html>
